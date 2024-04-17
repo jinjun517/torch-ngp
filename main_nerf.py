@@ -33,9 +33,9 @@ if __name__ == '__main__':
     parser.add_argument('--patch_size', type=int, default=1, help="[experimental] render patches in training, so as to apply LPIPS loss. 1 means disabled, use [64, 32, 16] to enable")
 
     ### network backbone options
-    parser.add_argument('--fp16', action='store_true', help="use amp mixed precision training")
-    parser.add_argument('--ff', action='store_true', help="use fully-fused MLP")
-    parser.add_argument('--tcnn', action='store_true', help="use TCNN backend")
+    parser.add_argument('--fp16', action='store_true', help="use amp mixed precision training")    #amp自动混合精度训练，在训练过程中，针对不同的层采用不用的数据精度，从而节省现存和加快训练速度
+    parser.add_argument('--ff', action='store_true', help="use fully-fused MLP“）
+    parser.add_argument('--tcnn', action='store_true', help="use TCNN backend")    
 
     ### dataset options
     parser.add_argument('--color_space', type=str, default='srgb', help="Color space, supports (linear, srgb)")
