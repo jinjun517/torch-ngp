@@ -107,6 +107,8 @@ if __name__ == '__main__':
     #criterion = torch.nn.HuberLoss(reduction='none', beta=0.1) # only available after torch 1.10 ?
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+# 整个流程为：模型和损失函数、训练器的初始化，数据加载，训练和结果保存
     
     if opt.test:
         
