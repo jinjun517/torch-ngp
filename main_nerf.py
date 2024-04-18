@@ -46,7 +46,7 @@ if __name__ == '__main__':
     parser.add_argument('--offset', type=float, nargs='*', default=[0, 0, 0], help="offset of camera location")
     parser.add_argument('--dt_gamma', type=float, default=1/128, help="dt_gamma (>=0) for adaptive ray marching. set to 0 to disable, >0 to accelerate rendering (but usually with worse quality)")
     parser.add_argument('--min_near', type=float, default=0.2, help="minimum near distance for camera")
-    parser.add_argument('--density_thresh', type=float, default=10, help="threshold for density grid to be occupied")
+    parser.add_argument('--density_thresh', type=float, default=10, help="threshold for density grid to be occupied")    #网格被占用的密度阈值
     parser.add_argument('--bg_radius', type=float, default=-1, help="if positive, use a background model at sphere(bg_radius)")
 
     ### GUI options
@@ -71,7 +71,7 @@ if __name__ == '__main__':
     
     if opt.patch_size > 1:
         opt.error_map = False # do not use error_map if use patch-based training
-        # assert opt.patch_size > 16, "patch_size should > 16 to run LPIPS loss."
+        # assert opt.patch_size > 16, "patch_size should > 16 to run LPIPS loss."    #Learned Perceptual Image Patch Similarity
         assert opt.num_rays % (opt.patch_size ** 2) == 0, "patch_size ** 2 should be dividable by num_rays."
 
 
@@ -88,7 +88,7 @@ if __name__ == '__main__':
 
     print(opt)
     
-    seed_everything(opt.seed)
+    seed_everything(opt.seed)    #这里取一个随机种子用于何种初始进程
 
     model = NeRFNetwork(
         encoding="hashgrid",
