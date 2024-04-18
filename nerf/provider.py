@@ -164,17 +164,17 @@ class NeRFDataset:
         
         # for colmap, manually interpolate a test set.
         if self.mode == 'colmap' and type == 'test':
-            
+            # 只有在colmap数据和test模式下，进行位姿初始化（这里为什么需要初始化）
             # choose two random poses, and interpolate between.
             f0, f1 = np.random.choice(frames, 2, replace=False)
             pose0 = nerf_matrix_to_ngp(np.array(f0['transform_matrix'], dtype=np.float32), scale=self.scale, offset=self.offset) # [4, 4]
             pose1 = nerf_matrix_to_ngp(np.array(f1['transform_matrix'], dtype=np.float32), scale=self.scale, offset=self.offset) # [4, 4]
             rots = Rotation.from_matrix(np.stack([pose0[:3, :3], pose1[:3, :3]]))
-            slerp = Slerp([0, 1], rots)
+            slerp = Slerp([0, 1], rots)    # 球面线性插值，用于四元数旋转矩阵之间的平滑插值，由scipy.spatial.transform实现
 
             self.poses = []
             self.images = None
-            for i in range(n_test + 1):
+            for i in range(n_test + 1):    #这里是在两个随机的位姿之间插入n_test个位姿
                 ratio = np.sin(((i / n_test) - 0.5) * np.pi) * 0.5 + 0.5
                 pose = np.eye(4, dtype=np.float32)
                 pose[:3, :3] = slerp(ratio).as_matrix()
@@ -221,9 +221,9 @@ class NeRFDataset:
                 image = image.astype(np.float32) / 255 # [H, W, 3/4]
 
                 self.poses.append(pose)
-                self.images.append(image)
+                self.images.append(image)    # blender和valide模式下直接读取位姿和图像
             
-        self.poses = torch.from_numpy(np.stack(self.poses, axis=0)) # [N, 4, 4]
+        self.poses = torch.from_numpy(np.stack(self.poses, axis=0)) # [N, 4, 4]    # 将array转换为tensor，且共享内存
         if self.images is not None:
             self.images = torch.from_numpy(np.stack(self.images, axis=0)) # [N, H, W, C]
         
