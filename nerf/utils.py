@@ -380,12 +380,12 @@ class Trainer(object):
         else:
             self.optimizer = optimizer(self.model)
 
-        if lr_scheduler is None:
+        if lr_scheduler is None:    #调整学习率
             self.lr_scheduler = optim.lr_scheduler.LambdaLR(self.optimizer, lr_lambda=lambda epoch: 1) # fake scheduler
         else:
             self.lr_scheduler = lr_scheduler(self.optimizer)
 
-        if ema_decay is not None:
+        if ema_decay is not None:    
             self.ema = ExponentialMovingAverage(self.model.parameters(), decay=ema_decay)
         else:
             self.ema = None
