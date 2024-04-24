@@ -390,7 +390,7 @@ class Trainer(object):
         else:
             self.ema = None
 
-        self.scaler = torch.cuda.amp.GradScaler(enabled=self.fp16)
+        self.scaler = torch.cuda.amp.GradScaler(enabled=self.fp16)    # 控制梯度溢出
 
         # variable init
         self.epoch = 0
