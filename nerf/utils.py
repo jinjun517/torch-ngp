@@ -837,11 +837,11 @@ class Trainer(object):
             for metric in self.metrics:
                 metric.clear()
 
-        self.model.train()
+        self.model.train()    # model=nerf，但是这里的train是怎么来的？
 
         # distributedSampler: must call set_epoch() to shuffle indices across multiple epochs
         # ref: https://pytorch.org/docs/stable/data.html
-        if self.world_size > 1:
+        if self.world_size > 1:    # 限制尺寸在1
             loader.sampler.set_epoch(self.epoch)
         
         if self.local_rank == 0:
@@ -849,7 +849,7 @@ class Trainer(object):
 
         self.local_step = 0
 
-        for data in loader:
+        for data in loader:    # iterate dataloader已经将数据按照batch_size打包了
             
             # update grid every 16 steps
             if self.model.cuda_ray and self.global_step % self.opt.update_extra_interval == 0:
