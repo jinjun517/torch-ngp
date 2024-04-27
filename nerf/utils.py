@@ -471,7 +471,7 @@ class Trainer(object):
         rays_o = data['rays_o'] # [B, N, 3]
         rays_d = data['rays_d'] # [B, N, 3]
 
-        # if there is no gt image, we train with CLIP loss.
+        # if there is no gt image, we train with CLIP loss. CLIP(Contrastive Language Image Pretraining)
         if 'images' not in data:
 
             B, N = rays_o.shape[:2]
@@ -503,7 +503,7 @@ class Trainer(object):
             #bg_color = torch.rand(3, device=self.device) # [3], frame-wise random.
             bg_color = torch.rand_like(images[..., :3]) # [N, 3], pixel-wise random.
 
-        if C == 4:
+        if C == 4:    # 四通道图像，rgb+alpha，其中alpha为透明度
             gt_rgb = images[..., :3] * images[..., 3:] + bg_color * (1 - images[..., 3:])
         else:
             gt_rgb = images
