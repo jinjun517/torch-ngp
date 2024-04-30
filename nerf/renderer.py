@@ -125,10 +125,10 @@ class NeRFRenderer(nn.Module):
     def run(self, rays_o, rays_d, num_steps=128, upsample_steps=128, bg_color=None, perturb=False, **kwargs):
         # rays_o, rays_d: [B, N, 3], assumes B == 1
         # bg_color: [3] in range [0, 1]
-        # return: image: [B, N, 3], depth: [B, N]
+        # return: image: [B, N, 3], depth: [B, N], semantic: [B, N]
 
-        prefix = rays_o.shape[:-1]
-        rays_o = rays_o.contiguous().view(-1, 3)
+        prefix = rays_o.shape[:-1]    # 3
+        rays_o = rays_o.contiguous().view(-1, 3)    # 保证张量内存的连续性,因为view改变不了数据本身，只能以新的形状查看
         rays_d = rays_d.contiguous().view(-1, 3)
 
         N = rays_o.shape[0] # N = B * N, in fact
@@ -139,7 +139,7 @@ class NeRFRenderer(nn.Module):
 
         # sample steps
         nears, fars = raymarching.near_far_from_aabb(rays_o, rays_d, aabb, self.min_near)
-        nears.unsqueeze_(-1)
+        nears.unsqueeze_(-1)    # 扩展维度，并且改变原张量
         fars.unsqueeze_(-1)
 
         #print(f'nears = {nears.min().item()} ~ {nears.max().item()}, fars = {fars.min().item()} ~ {fars.max().item()}')
@@ -148,7 +148,7 @@ class NeRFRenderer(nn.Module):
         z_vals = z_vals.expand((N, num_steps)) # [N, T]
         z_vals = nears + (fars - nears) * z_vals # [N, T], in [nears, fars]
 
-        # perturb z_vals
+        # perturb z_vals    # 随机生成val的z
         sample_dist = (fars - nears) / num_steps
         if perturb:
             z_vals = z_vals + (torch.rand(z_vals.shape, device=device) - 0.5) * sample_dist
