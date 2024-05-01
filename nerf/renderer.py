@@ -103,7 +103,7 @@ class NeRFRenderer(nn.Module):
     def forward(self, x, d):
         raise NotImplementedError()
 
-    # separated density and color query (can accelerate non-cuda-ray mode.)    这里只有声明，定义在子类中
+    # separated density and color query (can accelerate non-cuda-ray mode.)    这里只有声明，定义在继承类中
     def density(self, x):
         raise NotImplementedError()
 
@@ -167,7 +167,7 @@ class NeRFRenderer(nn.Module):
         for k, v in density_outputs.items():
             density_outputs[k] = v.view(N, num_steps, -1)
 
-        # upsample z_vals (nerf-like)
+        # upsample z_vals (nerf-like)    
         if upsample_steps > 0:
             with torch.no_grad():
 
@@ -185,13 +185,13 @@ class NeRFRenderer(nn.Module):
                 new_xyzs = rays_o.unsqueeze(-2) + rays_d.unsqueeze(-2) * new_z_vals.unsqueeze(-1) # [N, 1, 3] * [N, t, 1] -> [N, t, 3]
                 new_xyzs = torch.min(torch.max(new_xyzs, aabb[:3]), aabb[3:]) # a manual clip.
 
-            # only forward new points to save computation
+            # only forward new points to save computation    取了采样点的中间点作为新的点，计算密度
             new_density_outputs = self.density(new_xyzs.reshape(-1, 3))
             #new_sigmas = new_density_outputs['sigma'].view(N, upsample_steps) # [N, t]
             for k, v in new_density_outputs.items():
                 new_density_outputs[k] = v.view(N, upsample_steps, -1)
 
-            # re-order
+            # re-order 将两组z合并到一起
             z_vals = torch.cat([z_vals, new_z_vals], dim=1) # [N, T+t]
             z_vals, z_index = torch.sort(z_vals, dim=1)
 
@@ -206,24 +206,25 @@ class NeRFRenderer(nn.Module):
         deltas = torch.cat([deltas, sample_dist * torch.ones_like(deltas[..., :1])], dim=-1)
         alphas = 1 - torch.exp(-deltas * self.density_scale * density_outputs['sigma'].squeeze(-1)) # [N, T+t]
         alphas_shifted = torch.cat([torch.ones_like(alphas[..., :1]), 1 - alphas + 1e-15], dim=-1) # [N, T+t+1]
-        weights = alphas * torch.cumprod(alphas_shifted, dim=-1)[..., :-1] # [N, T+t]
+        weights = alphas * torch.cumprod(alphas_shifted, dim=-1)[..., :-1] # [N, T+t] 权重计算等同于nerf原文
 
-        dirs = rays_d.view(-1, 1, 3).expand_as(xyzs)
+        dirs = rays_d.view(-1, 1, 3).expand_as(xyzs)    # expend_as 扩维，复制
         for k, v in density_outputs.items():
+            
             density_outputs[k] = v.view(-1, v.shape[-1])
 
-        mask = weights > 1e-4 # hard coded
+        mask = weights > 1e-4 # hard coded    如果整条光线上的密度都地域阈值，则在计算rgb的时候该像素点设为零，不参与rgb计算
         rgbs = self.color(xyzs.reshape(-1, 3), dirs.reshape(-1, 3), mask=mask.reshape(-1), **density_outputs)
         rgbs = rgbs.view(N, -1, 3) # [N, T+t, 3]
 
         #print(xyzs.shape, 'valid_rgb:', mask.sum().item())
 
-        # calculate weight_sum (mask)
+        # calculate weight_sum (mask)    这是像素点的权重
         weights_sum = weights.sum(dim=-1) # [N]
         
         # calculate depth 
         ori_z_vals = ((z_vals - nears) / (fars - nears)).clamp(0, 1)
-        depth = torch.sum(weights * ori_z_vals, dim=-1)
+        depth = torch.sum(weights * ori_z_vals, dim=-1)    # 深度值是 光线上采样点的加权和
 
         # calculate color
         image = torch.sum(weights.unsqueeze(-1) * rgbs, dim=-2) # [N, 3], in [0, 1]
