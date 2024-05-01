@@ -103,7 +103,7 @@ class NeRFRenderer(nn.Module):
     def forward(self, x, d):
         raise NotImplementedError()
 
-    # separated density and color query (can accelerate non-cuda-ray mode.)
+    # separated density and color query (can accelerate non-cuda-ray mode.)    这里只有声明，定义在子类中
     def density(self, x):
         raise NotImplementedError()
 
@@ -134,21 +134,21 @@ class NeRFRenderer(nn.Module):
         N = rays_o.shape[0] # N = B * N, in fact
         device = rays_o.device
 
-        # choose aabb
+        # choose aabb    这里aabb就是边界框
         aabb = self.aabb_train if self.training else self.aabb_infer
 
-        # sample steps
+        # sample steps    这里依据边界框，取道了每条光线的最远最近
         nears, fars = raymarching.near_far_from_aabb(rays_o, rays_d, aabb, self.min_near)
         nears.unsqueeze_(-1)    # 扩展维度，并且改变原张量
         fars.unsqueeze_(-1)
 
         #print(f'nears = {nears.min().item()} ~ {nears.max().item()}, fars = {fars.min().item()} ~ {fars.max().item()}')
 
-        z_vals = torch.linspace(0.0, 1.0, num_steps, device=device).unsqueeze(0) # [1, T]
+        z_vals = torch.linspace(0.0, 1.0, num_steps, device=device).unsqueeze(0) # [1, T]    #这里均匀采样
         z_vals = z_vals.expand((N, num_steps)) # [N, T]
         z_vals = nears + (fars - nears) * z_vals # [N, T], in [nears, fars]
 
-        # perturb z_vals    # 随机生成val的z
+        # perturb z_vals    # 在上面均匀采样出的点上，进行随机变化
         sample_dist = (fars - nears) / num_steps
         if perturb:
             z_vals = z_vals + (torch.rand(z_vals.shape, device=device) - 0.5) * sample_dist
